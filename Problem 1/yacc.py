@@ -8,6 +8,8 @@ DEBUG = True
 # Namespace & built-in functions
 
 name = {}
+let_d = {} # Dictionary that stores variable name and value ( Example: {'a' : 3} )
+terms = [] # Keeps track of the terms in order to match dictionary variables to their values
 
 def cons(l):
     return [l[0]] + l[1]
@@ -57,6 +59,8 @@ def cond(l):
 name['cond'] = cond
 
 def add(l):
+    global terms
+    terms = list(l) # Copy list "l" to the "terms" list
     return sum(l)
 
 name['+'] = add
@@ -71,6 +75,34 @@ def _print(l):
     print lisp_str(l[0])
 
 name['print'] = _print
+
+def let(l):
+    # (let (a 3) (+ 1 a))
+        # Calling a with [3]
+        # Calling + with [1, 'a']
+        # Calling let with [['a', 3], <function add at 0x2>]
+    let_d[l[0][0]] = l[0][1] # Add the variable and its value to the dictionary
+    #result = lisp_eval(l[1][0], [l[1][1], let_d[l[0][0]]])
+    #result = name[l[1][0]](l[1][1], let_d[l[0][0]])
+    #result = call(name[l[1][0]], [1, let_d[l[0][0]]])
+    #result = l[1]([let_d[l[0][0]], 1])
+    variable_index = terms.index(l[0][0]) # Index of variable
+    terms[variable_index] = let_d[l[0][0]] # Replace the variable letter with the actual value
+    result = l[1](terms) # Calculate the final result
+    del let_d[l[0][0]] # Delete the variable from the dictionary
+    return result
+
+name['let'] = let
+
+def _if(l):
+    # Format: (if #t 1 2) - if true, return 1; otherwise, return 2
+        # l[0] = #t, l[1] = 1, l[2] = 2
+    if l[0] == True:
+        return l[1]
+    else:
+        return l[2]
+
+name['if'] = _if
 
 #  Evaluation functions
 
@@ -177,8 +209,8 @@ def p_item_empty(p):
 
 def p_call(p):
     'call : LPAREN SIMB items RPAREN'
-    if DEBUG: print "Calling", p[2], "with", p[3] 
-    p[0] = lisp_eval(p[2], p[3])   
+    if DEBUG: print "Calling", p[2], "with", p[3]
+    p[0] = lisp_eval(p[2], p[3])
 
 def p_atom_simbol(p):
     'atom : SIMB'
