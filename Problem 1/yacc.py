@@ -8,8 +8,7 @@ DEBUG = True
 # Namespace & built-in functions
 
 name = {}
-let_d = {} # Dictionary that stores variable name and value ( Example: {'a' : 3} )
-terms = [] # Keeps track of the terms in order to match dictionary variables to their values
+let_dict = {} # Dictionary that stores variable name and value ( Example: {'a' : 3} )
 
 def cons(l):
     return [l[0]] + l[1]
@@ -59,17 +58,50 @@ def cond(l):
 name['cond'] = cond
 
 def add(l):
-    global terms
-    terms = list(l) # Copy list "l" to the "terms" list
+    for t in range(len(l)):
+        if l[t] in let_dict: # Check if the term is a variable in the dictionary
+            l[t] = let_dict[l[t]] # Change the term from the variable name to its value
     return sum(l)
 
 name['+'] = add
 
 def minus(l):
-    '''Unary minus'''
-    return -l[0]
+    for t in range(len(l)):
+        if l[t] in let_dict: # Check if the term is a variable in the dictionary
+            l[t] = let_dict[l[t]] # Change the term from the variable name to its value
+    result = l[0]
+    for t in l[1:]:
+        result -= t # Can handle more than 2 terms to subtract
+    return result
 
 name['-'] = minus
+
+def multiply(l):
+    for t in range(len(l)):
+        if l[t] in let_dict: # Check if the term is a variable in the dictionary
+            l[t] = let_dict[l[t]] # Change the term from the variable name to its value
+    result = 1
+    for t in l:
+        result *= t # Can handle more than 2 terms to multiply
+    return result
+
+name['*'] = multiply
+
+def divide(l):
+    # NOTE: had to change SIMB regular expression in lex.py to allow for "/"
+    for t in range(len(l)):
+        if l[t] in let_dict: # Check if the term is a variable in the dictionary
+            l[t] = let_dict[l[t]] # Change the term from the variable name to its value
+    result = float(l[0])
+    try:
+        for t in l[1:]:
+            result /= t # Can handle more than 2 terms to divide
+        return result
+    except ZeroDivisionError:
+        print("Error: cannot divide by 0!")
+        return None
+
+name['/'] = divide
 
 def _print(l):
     print lisp_str(l[0])
@@ -77,20 +109,10 @@ def _print(l):
 name['print'] = _print
 
 def let(l):
-    # (let (a 3) (+ 1 a))
-        # Calling a with [3]
-        # Calling + with [1, 'a']
-        # Calling let with [['a', 3], <function add at 0x2>]
-    let_d[l[0][0]] = l[0][1] # Add the variable and its value to the dictionary
-    #result = lisp_eval(l[1][0], [l[1][1], let_d[l[0][0]]])
-    #result = name[l[1][0]](l[1][1], let_d[l[0][0]])
-    #result = call(name[l[1][0]], [1, let_d[l[0][0]]])
-    #result = l[1]([let_d[l[0][0]], 1])
-    variable_index = terms.index(l[0][0]) # Index of variable
-    terms[variable_index] = let_d[l[0][0]] # Replace the variable letter with the actual value
-    result = l[1](terms) # Calculate the final result
-    del let_d[l[0][0]] # Delete the variable from the dictionary
-    return result
+    del let_dict[l[0][0]] # Delete the dictionary item
+    if len(l) == 1:
+        return l[0][1] # Handles case like (let (a 3)) - only returns the value
+    return l[-1] # Return the last item of "l", which is the result returned from arithmetic function
 
 name['let'] = let
 
@@ -110,7 +132,9 @@ def lisp_eval(simb, items):
     if simb in name:
         return call(name[simb], eval_lists(items))
     else:
-       return [simb] + items
+        if simb not in let_dict: # Variable is not already in the dictionary
+            let_dict[simb] = items[0] # Add the variable and value to the dictionary
+        return [simb] + items
 
 def call(f, l):
     try:
