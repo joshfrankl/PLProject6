@@ -29,35 +29,16 @@ class MiniLisp(cmd.Cmd):     # See https://docs.python.org/2/library/cmd.html
         """Do nothing on empty input line"""
         pass
 
-    def parse(self, program):
-        "Read a Scheme expression from a string."
-        return self.read_from_tokens(self.tokenize(program))
-
-    def tokenize(self, line):
-        "Convert a string into a list of tokens."
-        return line.replace('(',' ( ').replace(')',' ) ').split()
-
-    def read_from_tokens(self, tokens):
-        "Read an expression from a sequence of tokens."
-        if len(tokens) == 0:
-            raise SyntaxError('unexpected EOF while reading')
-        token = tokens.pop(0)
-        if '(' == token:
-            L = []
-            while tokens[0] != ')':
-                L.append(self.read_from_tokens(tokens))
-            tokens.pop(0) # pop off ')'
-            return L
-        elif ')' == token:
-            raise SyntaxError('unexpected )')
-        else:
-            return str(token)
-
     def default(self, line):       
         """Called on an input line when the command prefix is not recognized.
            In that case we execute the line as Python code.
         """
-        print self.parse(line)
+
+        result = yacc.parse(line)
+        print "result is: ", result
+        import lis
+        print lis.eval(result)
+
         '''result = yacc.parse(line)
         s = lisp_str(result)
         if s != 'nil':
