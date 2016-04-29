@@ -61,7 +61,7 @@ def add(l):
     for t in range(len(l)):
         if l[t] in let_dict: # Check if the term is a variable in the dictionary
             l[t] = let_dict[l[t]] # Change the term from the variable name to its value
-    return sum(l)
+    return sum( [int(t) for t in l ] )
 
 name['+'] = add
 
@@ -69,9 +69,9 @@ def minus(l):
     for t in range(len(l)):
         if l[t] in let_dict: # Check if the term is a variable in the dictionary
             l[t] = let_dict[l[t]] # Change the term from the variable name to its value
-    result = l[0]
+    result = int(l[0])
     for t in l[1:]:
-        result -= t # Can handle more than 2 terms to subtract
+        result -= int(t) # Can handle more than 2 terms to subtract
     return result
 
 name['-'] = minus
@@ -82,7 +82,7 @@ def multiply(l):
             l[t] = let_dict[l[t]] # Change the term from the variable name to its value
     result = 1
     for t in l:
-        result *= t # Can handle more than 2 terms to multiply
+        result *= int(t) # Can handle more than 2 terms to multiply
     return result
 
 name['*'] = multiply
@@ -95,7 +95,7 @@ def divide(l):
     result = float(l[0])
     try:
         for t in l[1:]:
-            result /= t # Can handle more than 2 terms to divide
+            result /= int(t) # Can handle more than 2 terms to divide
         return result
     except ZeroDivisionError:
         print("Error: cannot divide by 0!")
